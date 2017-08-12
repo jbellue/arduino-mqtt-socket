@@ -1,19 +1,12 @@
+#include <WiFiManager.h>
+
 #include <Bounce2.h>
 #include <ESP8266WiFi.h>
 #include <ArduinoOTA.h>
 #include <PubSubClient.h>
 #include <ESP8266WebServer.h>
 
-#include "wifi_credentials.h"
-/* contains
- *  #define WIFI_SSID "ssid"
- *  #define WIFI_PASSWORD "password"
-*/
-const char* wifi_ssid = WIFI_SSID;
-const char* wifi_password = WIFI_PASSWORD;
-
 #define BUFFER_LENGTH 100
-
 char mqtt_broker[BUFFER_LENGTH] = "";
 char mqtt_topic[BUFFER_LENGTH] = "";
 int mqtt_broker_port = 0;
@@ -37,12 +30,14 @@ mqtt_broker
 mqtt_topic
 mqtt_broker_port
  * */
+  WiFiManager wifiManager;
+  wifiManager.autoConnect("AutoConnectAP");
   pinMode(relay_pin, OUTPUT);
   Serial.begin(115200);
   relay_state = LOW;
   debouncer.attach(button_pin, INPUT_PULLUP);
   debouncer.interval(5);
-  setup_wifi();
+
   client.setServer(mqtt_broker, mqtt_broker_port);
   client.setCallback(callback);
   server.on("/",       handle_root);
@@ -89,27 +84,6 @@ void handle_submit() {
   }
   send_page();
 }
-
-void setup_wifi() {
-  delay(10);
-  // We start by connecting to a WiFi network
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(wifi_ssid);
-
-  WiFi.begin(wifi_ssid, wifi_password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-}
-
 
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");

@@ -5,10 +5,13 @@
 #include <ESP8266WebServer.h>
 
 #include "wifi_credentials.h"
-/* contains:
-  const char* wifi_ssid = "wifissid";
-  const char* wifi_password = "wifipassword";
+/* contains
+ *  #define WIFI_SSID "ssid"
+ *  #define WIFI_PASSWORD "password"
 */
+const char* wifi_ssid = WIFI_SSID;
+const char* wifi_password = WIFI_PASSWORD;
+
 #define BUFFER_LENGTH 100
 
 char mqtt_broker[BUFFER_LENGTH] = "";

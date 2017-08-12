@@ -9,10 +9,13 @@
   const char* wifi_ssid = "wifissid";
   const char* wifi_password = "wifipassword";
 */
+#define BUFFER_LENGTH 100
 
+char mqtt_broker[BUFFER_LENGTH] = "";
+char mqtt_topic[BUFFER_LENGTH] = "";
+int mqtt_broker_port = 0;
 
-const char* mqtt_server = "192.168.1.24";
-const char* mqtt_topic = "led_1";
+unsigned long previous_millis = 0;
 
 const int relay_pin = D2;
 const int button_pin = D5;
@@ -21,21 +24,23 @@ bool relay_state = LOW;
 Bounce debouncer = Bounce();
 
 WiFiClient espClient;
+PubSubClient client(espClient);
 ESP8266WebServer server(80);
 
-PubSubClient client(espClient);
-long lastMsg = 0;
-char msg[50];
-int value = 0;
-
 void setup() {
+/*
+ * Need to initialise these from EEPROM
+mqtt_broker
+mqtt_topic
+mqtt_broker_port
+ * */
   pinMode(relay_pin, OUTPUT);
   Serial.begin(115200);
   relay_state = LOW;
   debouncer.attach(button_pin, INPUT_PULLUP);
   debouncer.interval(5);
   setup_wifi();
-  client.setServer(mqtt_server, 1883);
+  client.setServer(mqtt_broker, mqtt_broker_port);
   client.setCallback(callback);
   server.on("/",       handle_root);
   server.on("/submit", handle_submit);
@@ -53,37 +58,29 @@ void send_page() {
   String page = "<!DOCTYPE html><html><body><form action='http://";
   page += local_ip;
   page += "/submit' method='POST'>MQTT broker: <input type='text' name='broker' value='";
-  page += mqtt_server;
+  page += mqtt_broker;
+  page += "'><br>MQTT broker port: <input type='text' name='broker_port' value='";
+  page += mqtt_broker_port;
   page += "'><br>MQTT topic: <input type='text' name='topic' value='";
   page += mqtt_topic;
-  page += "'><br>Relay:<br><input type='radio' name='relay' value='on'";
-  if(relay_state == HIGH) {
-    page += " checked";
-  }
-  page += ">on<br><input type='radio' name='relay' value='off'";
-    if(relay_state == LOW) {
-    page += " checked";
-  }
-  page += ">off<br><br><input type='submit' value='Submit'></form></body></html>";
+  page += "'><br><input type='submit' value='Submit'></form></body></html>";
   server.send(200, "text/html", page);
 }
 void handle_submit() {
   if (server.args() > 0 ) {
     for ( uint8_t i = 0; i < server.args(); i++ ) {
       if (server.argName(i) == "broker") {
-        
+        client.disconnect();
+        server.arg(i).toCharArray(mqtt_broker, 50);
+        client.setServer(mqtt_broker, mqtt_broker_port);
+      } else if (server.argName(i) == "broker_port") {
+        client.disconnect();
+        mqtt_broker_port = server.arg(i).toInt();
+        client.setServer(mqtt_broker, mqtt_broker_port);
       } else if (server.argName(i) == "topic") {
-        
-      } else if (server.argName(i) == "relay") {
-        if (server.arg(i) == "on") {
-          relay_state = HIGH;
-          client.publish(mqtt_topic, "1");
-        }
-        else {
-          relay_state = LOW;
-          client.publish(mqtt_topic, "0");
-        }
-        digitalWrite(relay_pin, relay_state);
+        client.unsubscribe(mqtt_topic);
+        server.arg(i).toCharArray(mqtt_topic, 50);
+        client.subscribe(mqtt_topic);
       }
     }
   }
@@ -120,7 +117,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   Serial.println();
 
-  // Switch on the LED if an 1 was received as first character
   if ((char)payload[0] == '0') {
     digitalWrite(relay_pin, LOW);   // Turn the LED on (Note that LOW is the voltage level
     Serial.println("relay_pin -> LOW");
@@ -132,34 +128,33 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
 }
 
-void reconnect() {
-  // Loop until we're reconnected
-  while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
-    // Attempt to connect
-    if (client.connect("ESP8266Client")) {
-      Serial.println("connected");
-      // Once connected, publish an announcement...
-      client.publish(mqtt_topic, "LED 1 is connected");
-      // ... and resubscribe
-      client.subscribe(mqtt_topic);
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
-      delay(5000);
-    }
+void mqtt_connect() {
+  Serial.print("Attempting MQTT connection...");
+  // Attempt to connect
+  if (client.connect("ESP8266Client")) {
+    Serial.println("connected");
+    // Once connected, publish an announcement...
+    client.publish(mqtt_topic, "LED 1 is connected");
+    // ... and resubscribe
+    client.subscribe(mqtt_topic);
+  } else {
+    Serial.print("failed, rc=");
+    Serial.println(client.state());
   }
 }
 
 void loop() {
-  if (!client.connected()) {
-    reconnect();
+  unsigned long current_millis = millis();
+  if (!client.connected() && current_millis - previous_millis >= 5000) {
+    previous_millis = current_millis;
+    mqtt_connect();
   }
   ArduinoOTA.handle();
-  client.loop();
   server.handleClient();
+
+  if(client.connected()) {
+    client.loop();
+  }
 
   debouncer.update();
   if ( debouncer.fell()) {

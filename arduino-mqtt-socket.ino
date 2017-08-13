@@ -40,7 +40,7 @@ mqtt_broker_port
 
   client.setServer(mqtt_broker, mqtt_broker_port);
   client.setCallback(callback);
-  server.on("/",       handle_request);
+  server.on("/", handle_request);
   server.begin();
   ArduinoOTA.begin();
 }
@@ -91,11 +91,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println();
 
   if ((char)payload[0] == '0') {
-    digitalWrite(relay_pin, LOW);   // Turn the LED on (Note that LOW is the voltage level
+    digitalWrite(relay_pin, LOW);
     Serial.println("relay_pin -> LOW");
     relay_state = LOW;
   } else if ((char)payload[0] == '1') {
-    digitalWrite(relay_pin, HIGH);  // Turn the LED off by making the voltage HIGH
+    digitalWrite(relay_pin, HIGH);
     Serial.println("relay_pin -> HIGH");
     relay_state = HIGH;
   }

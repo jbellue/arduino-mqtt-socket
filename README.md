@@ -4,7 +4,7 @@ Control an mains socket with an ESP8266 (in my case, a Wemos D1 mini clone) conn
 
 TODO:
 - [x] Add a page to setup what can be setup
-- [ ] Store broker data into EEPROM
+- [x] Store broker data into EEPROM
 - [x] Add a WiFi portal to set up the connection if the wifi is unreachable
 - [ ] Add a way to update the topic over mqtt
 - [ ] Betterify

@@ -126,7 +126,7 @@ void handle_request() {
         for ( uint8_t i = 0; i < server.args(); i++ ) {
             if (server.argName(i) == "broker") {
                 client.disconnect();
-                server.arg(i).toCharArray(mqtt_broker, 50);
+                server.arg(i).toCharArray(mqtt_broker, BUFFER_LENGTH);
                 client.setServer(mqtt_broker, mqtt_broker_port);
             } else if (server.argName(i) == "broker_port") {
                 client.disconnect();
@@ -134,7 +134,7 @@ void handle_request() {
                 client.setServer(mqtt_broker, mqtt_broker_port);
             } else if (server.argName(i) == "topic") {
                 client.unsubscribe(mqtt_topic);
-                server.arg(i).toCharArray(mqtt_topic, 50);
+                server.arg(i).toCharArray(mqtt_topic, BUFFER_LENGTH);
                 client.subscribe(mqtt_topic);
             } else if (server.argName(i) == "retain") {
                 mqtt_retain = true;

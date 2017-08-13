@@ -18,6 +18,9 @@ unsigned long previous_millis = 0;
 
 const int relay_pin = D2;
 const int button_pin = D5;
+
+// start as LOW to ensure things won't turn first on
+// (they might only after succesfully subscribing and getting a retained value though)
 bool relay_state = LOW;
 
 Bounce debouncer = Bounce();
@@ -54,7 +57,7 @@ bool load_config() {
 
     strncpy(mqtt_broker, json["mqtt_broker"], sizeof(mqtt_broker));
     mqtt_broker_port = json["mqtt_broker_port"];
-    strncpy(mqtt_topic, json["mqtt_topic"], sizeof(mqtt_broker));
+    strncpy(mqtt_topic, json["mqtt_topic"], sizeof(mqtt_topic));
     mqtt_retain = json["mqtt_retain"];
 
     config_file.close();

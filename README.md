@@ -6,5 +6,4 @@ TODO:
 - [x] Add a page to setup what can be setup
 - [x] Store broker data into EEPROM
 - [x] Add a WiFi portal to set up the connection if the wifi is unreachable
-- [ ] Add a way to update the topic over mqtt
 - [ ] Betterify

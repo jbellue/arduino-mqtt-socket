@@ -152,30 +152,38 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.print("Message arrived [");
     Serial.print(topic);
     Serial.print("] ");
-    for (int i = 0; i < length; i++) {
+    for (unsigned int i = 0; i < length; i++) {
         Serial.print((char)payload[i]);
     }
     Serial.println();
     if(0 == strcmp(topic, mqtt_topic)) {
         if ((char)payload[0] == '0') {
-            Serial.println("relay_pin -> LOW");
-            relay_state = LOW;
+            set_relay(LOW);
         } else if ((char)payload[0] == '1') {
-            Serial.println("relay_pin -> HIGH");
-            relay_state = HIGH;
+            set_relay(HIGH);
         } else if ((char)payload[0] == '2') {
-            relay_state = !relay_state;
-            Serial.println("relay_pin -> HIGH");
+            set_relay(!relay_state);
         }
-        digitalWrite(relay_pin, relay_state);
     }
+}
+
+void set_relay(bool new_relay_state) {
+    if(relay_state == new_relay_state) {
+        Serial.print("relay_pin already ");
+        Serial.println(new_relay_state?"HIGH":"LOW");
+        return;
+    }
+    Serial.print("relay_pin -> ");
+    Serial.println(new_relay_state?"HIGH":"LOW");
+    relay_state = new_relay_state;
+    digitalWrite(relay_pin, relay_state);
 }
 
 void mqtt_connect() {
     Serial.print("Attempting MQTT connection...");
-    if (client.connect("ESP8266Client")) {
+    if (client.connect("ESP8266Client", mqtt_topic, 0, true, "down")) {
         Serial.println("connected");
-        client.publish(mqtt_topic, "LED 1 is connected");
+        client.publish(mqtt_topic, "up");
         client.subscribe(mqtt_topic);
     } else {
         Serial.print("failed, rc=");
@@ -197,11 +205,10 @@ void loop() {
     }
 
     debouncer.update();
-    if ( debouncer.fell()) {
+    if (debouncer.fell()) {
         Serial.println("Debouncer fell");
         // Toggle relay state :
-        relay_state = !relay_state;
-        digitalWrite(relay_pin, relay_state);
+        set_relay(!relay_state);
         if (relay_state == HIGH) {
             client.publish(mqtt_topic, "1", mqtt_retain);
         }

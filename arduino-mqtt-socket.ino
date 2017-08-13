@@ -183,7 +183,7 @@ void mqtt_connect() {
     Serial.print("Attempting MQTT connection...");
     if (client.connect("ESP8266Client", mqtt_topic, 0, true, "down")) {
         Serial.println("connected");
-        client.publish(mqtt_topic, "up");
+        client.publish(mqtt_topic, "up", true);
         client.subscribe(mqtt_topic);
     } else {
         Serial.print("failed, rc=");

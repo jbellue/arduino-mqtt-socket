@@ -40,14 +40,9 @@ mqtt_broker_port
 
   client.setServer(mqtt_broker, mqtt_broker_port);
   client.setCallback(callback);
-  server.on("/",       handle_root);
-  server.on("/submit", handle_submit);
+  server.on("/",       handle_request);
   server.begin();
   ArduinoOTA.begin();
-}
-
-void handle_root() {
-  send_page();
 }
 
 void send_page() {
@@ -55,7 +50,7 @@ void send_page() {
   sprintf(local_ip, "%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3] );
   String page = "<!DOCTYPE html><html><body><form action='http://";
   page += local_ip;
-  page += "/submit' method='POST'>MQTT broker: <input type='text' name='broker' value='";
+  page += "/' method='POST'>MQTT broker: <input type='text' name='broker' value='";
   page += mqtt_broker;
   page += "'><br>MQTT broker port: <input type='text' name='broker_port' value='";
   page += mqtt_broker_port;
@@ -64,7 +59,8 @@ void send_page() {
   page += "'><br><input type='submit' value='Submit'></form></body></html>";
   server.send(200, "text/html", page);
 }
-void handle_submit() {
+
+void handle_request() {
   if (server.args() > 0 ) {
     for ( uint8_t i = 0; i < server.args(); i++ ) {
       if (server.argName(i) == "broker") {
